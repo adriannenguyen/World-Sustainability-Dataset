@@ -25,3 +25,40 @@ df = df[
 ]
 
 print(df.head())
+
+# rename columns
+df.rename(
+    columns={
+        "Final consumption expenditure (% of GDP) - NE.CON.TOTL.ZS": "Final Consumption",
+        "Renewable energy consumption (% of total final energy consumption) - EG.FEC.RNEW.ZS": "Renewable Energy Consumption",
+        "Annual production-based emissions of carbon dioxide (CO2), measured in million tonnes": "Annual CO2 Emissions",
+        "Income Classification (World Bank Definition)": "Income Classification",
+    },
+    inplace=True,
+)
+
+print(df.head())
+
+# rearrange columns
+df = df[
+    [
+        "Continent",
+        "Country Name",
+        "Income Classification",
+        "Year",
+        "Annual CO2 Emissions",
+        "Renewable Energy Consumption",
+        "Final Consumption",
+    ]
+]
+
+print(df.head())
+
+# check to see how many null objects are in the dataset
+print(df.isnull().sum())
+
+# quick summary of each column in the dataframe
+print(df.describe())
+
+# data dimensions
+print(df.shape)
