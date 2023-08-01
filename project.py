@@ -83,6 +83,6 @@ g = sns.relplot(
     y = "Renewable Energy Use (%)", 
     hue = "Continent", 
     aspect = 1.75
-).set(title = "World Renewable Energy Use from 2000-2018 by Continent ")
+).set(title = "World Renewable Energy Use from 2000-2018 by Continent")
 g.set_xticklabels(rotation = 30)
 plt.show()
