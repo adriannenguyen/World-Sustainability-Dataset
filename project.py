@@ -62,3 +62,26 @@ print(df.describe())
 
 # data dimensions
 print(df.shape)
+
+# turn year into str
+df["Year"] = df["Year"].astype("str")
+
+# calculate mean of renewable energy consumption grouped by continent and year
+print(df.groupby(["Continent", "Year"])["Renewable Energy Use"].mean())
+
+# create new dataframe for mean
+cont_REC_df = df.groupby(["Continent", "Year"])["Renewable Energy Use"].mean()\
+    .reset_index(name = "Renewable Energy Use (%)")
+print(cont_REC_df)
+
+# plot
+g = sns.relplot(
+    kind = "line", 
+    data = cont_REC_df, 
+    x = "Year", 
+    y = "Renewable Energy Use (%)", 
+    hue = "Continent", 
+    aspect = 1.75
+).set(title = "World Renewable Energy Use from 2000-2018 by Continent ")
+g.set_xticklabels(rotation = 30)
+plt.show()
