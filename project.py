@@ -17,7 +17,6 @@ df = df[
     [
         "Country Name",
         "Year",
-        "Final consumption expenditure (% of GDP) - NE.CON.TOTL.ZS",
         "Renewable energy consumption (% of total final energy consumption) - EG.FEC.RNEW.ZS",
         "Annual production-based emissions of carbon dioxide (CO2), measured in million tonnes",
         "Continent",
@@ -30,8 +29,7 @@ print(df.head())
 # rename columns
 df.rename(
     columns={
-        "Final consumption expenditure (% of GDP) - NE.CON.TOTL.ZS": "Final Consumption",
-        "Renewable energy consumption (% of total final energy consumption) - EG.FEC.RNEW.ZS": "Renewable Energy Consumption",
+        "Renewable energy consumption (% of total final energy consumption) - EG.FEC.RNEW.ZS": "Renewable Energy Use",
         "Annual production-based emissions of carbon dioxide (CO2), measured in million tonnes": "Annual CO2 Emissions",
         "Income Classification (World Bank Definition)": "Income Classification",
     },
@@ -48,14 +46,15 @@ df = df[
         "Income Classification",
         "Year",
         "Annual CO2 Emissions",
-        "Renewable Energy Consumption",
-        "Final Consumption",
+        "Renewable Energy Use",
     ]
 ]
 
 print(df.head())
 
 # check to see how many null objects are in the dataset
+print(df.isnull().sum())
+df.dropna(axis=0, how="any", inplace=True)
 print(df.isnull().sum())
 
 # quick summary of each column in the dataframe
