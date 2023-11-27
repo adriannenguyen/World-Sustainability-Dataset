@@ -22,6 +22,9 @@ def clean_data(df):
     # Drop rows with any missing values
     df.dropna(axis=0, how="any", inplace=True)
 
+    # Convert "Year" to str
+    df["Year"] = df["Year"].astype("str")
+
     return df
 
 def plot_data(df, x, y, hue, title):
@@ -35,15 +38,11 @@ def main():
     df = read_data(file_path)
     df = clean_data(df)
 
-    # Convert "Year" to str
-    df["Year"] = df["Year"].astype("str")
-
     # Group and aggregate data
     avg_df = df.groupby(["Continent", "Year"]).agg({
         "Renewable Energy Use (%)": "mean",
         "Annual CO2 Emissions (Mt)": "mean"
     }).reset_index()
-
 
     # Plot graphs
     plot_data(avg_df, "Year", "Renewable Energy Use (%)", "Continent", "Average World Renewable Energy Use from 2000-2018 by Continent")
