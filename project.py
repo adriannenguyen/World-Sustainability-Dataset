@@ -1,87 +1,53 @@
 """World Sustainability Dataset"""
-# import libraries
 import pandas as pd
-import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-# read csv and assign it to variable df
-df = pd.read_csv(
-    "/workspaces/World-Sustainability-Dataset/WorldSustainabilityDataset.csv"
-)
-print(df.head())
+def read_data(file_path):
+    # Read dataset from CSV file
+    return pd.read_csv(file_path)
 
-# only keep country name, year, final consumption expenditure, renewable energy consumption,
-# annual CO2 emissions, continent, and income classification
-df = df[
-    [
-        "Country Name",
-        "Year",
-        "Renewable energy consumption (% of total final energy consumption) - EG.FEC.RNEW.ZS",
-        "Annual production-based emissions of carbon dioxide (CO2), measured in million tonnes",
-        "Continent",
-        "Income Classification (World Bank Definition)",
-    ]
-]
+def clean_data(df):
+    # Select relevant columns
+    df = df[["Country Name", "Year", "Renewable energy consumption (% of total final energy consumption) - EG.FEC.RNEW.ZS",
+             "Annual production-based emissions of carbon dioxide (CO2), measured in million tonnes",
+             "Continent", "Income Classification (World Bank Definition)"]]
 
-print(df.head())
+    # Rename columns
+    df.columns = ["Country", "Year", "Renewable Energy Use (%)", "Annual CO2 Emissions (Mt)", "Continent", "Income Classification"]
 
-# rename columns
-df.rename(
-    columns={
-        "Renewable energy consumption (% of total final energy consumption) - EG.FEC.RNEW.ZS": "Renewable Energy Use",
-        "Annual production-based emissions of carbon dioxide (CO2), measured in million tonnes": "Annual CO2 Emissions",
-        "Income Classification (World Bank Definition)": "Income Classification",
-    },
-    inplace=True,
-)
+    # Reorder columns
+    df = df[["Continent", "Country", "Income Classification", "Year", "Renewable Energy Use (%)", "Annual CO2 Emissions (Mt)"]]
 
-print(df.head())
+    # Drop rows with any missing values
+    df.dropna(axis=0, how="any", inplace=True)
 
-# rearrange columns
-df = df[
-    [
-        "Continent",
-        "Country Name",
-        "Income Classification",
-        "Year",
-        "Annual CO2 Emissions",
-        "Renewable Energy Use",
-    ]
-]
+    return df
 
-print(df.head())
+def plot_data(df, x, y, hue, title):
+    # Plot line graph
+    g = sns.relplot(kind="line", data=df, x=x, y=y, hue=hue, aspect=1.75).set(title=title)
+    g.set_xticklabels(rotation=30)
+    plt.show()
 
-# check to see how many null objects are in the dataset
-print(df.isnull().sum())
-df.dropna(axis=0, how="any", inplace=True)
-print(df.isnull().sum())
+def main():
+    file_path = "/workspaces/World-Sustainability-Dataset/WorldSustainabilityDataset.csv"
+    df = read_data(file_path)
+    df = clean_data(df)
 
-# quick summary of each column in the dataframe
-print(df.describe())
+    # Convert "Year" to str
+    df["Year"] = df["Year"].astype("str")
 
-# data dimensions
-print(df.shape)
+    # Group and aggregate data
+    avg_df = df.groupby(["Continent", "Year"]).agg({
+        "Renewable Energy Use (%)": "mean",
+        "Annual CO2 Emissions (Mt)": "mean"
+    }).reset_index()
 
-# turn year into str
-df["Year"] = df["Year"].astype("str")
 
-# calculate mean of renewable energy consumption grouped by continent and year
-print(df.groupby(["Continent", "Year"])["Renewable Energy Use"].mean())
+    # Plot graphs
+    plot_data(avg_df, "Year", "Renewable Energy Use (%)", "Continent", "Average World Renewable Energy Use from 2000-2018 by Continent")
+    plot_data(avg_df, "Year", "Annual CO2 Emissions (Mt)", "Continent", "Average Annual World CO2 Emissions from 2000-2018 by Continent")
 
-# create new dataframe for mean
-cont_REC_df = df.groupby(["Continent", "Year"])["Renewable Energy Use"].mean()\
-    .reset_index(name = "Renewable Energy Use (%)")
-print(cont_REC_df)
-
-# plot
-g = sns.relplot(
-    kind = "line", 
-    data = cont_REC_df, 
-    x = "Year", 
-    y = "Renewable Energy Use (%)", 
-    hue = "Continent", 
-    aspect = 1.75
-).set(title = "World Renewable Energy Use from 2000-2018 by Continent")
-g.set_xticklabels(rotation = 30)
-plt.show()
+if __name__ == "__main__":
+    main()
