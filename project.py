@@ -9,27 +9,53 @@ def read_data(file_path):
 
 def clean_data(df):
     # Select relevant columns
-    df = df[["Country Name", "Year", "Renewable energy consumption (% of total final energy consumption) - EG.FEC.RNEW.ZS",
+    df = df[["Country Name", "Year", "Access to electricity (% of population) - EG.ELC.ACCS.ZS",
+             "Renewable electricity output (% of total electricity output) - EG.ELC.RNEW.ZS",
+             "Renewable energy consumption (% of total final energy consumption) - EG.FEC.RNEW.ZS",
              "Annual production-based emissions of carbon dioxide (CO2), measured in million tonnes",
-             "Continent", "Income Classification (World Bank Definition)"]]
+             "Continent", "Income Classification (World Bank Definition)"]] 
 
     # Rename columns
-    df.columns = ["Country", "Year", "Renewable Energy Use (%)", "Annual CO2 Emissions (Mt)", "Continent", "Income Classification"]
+    df.columns = ["Country", "Year", "Access to Electricity (% of population)", 
+                  "Renewable Electricity Output (% of total electricity output)",
+                  "Renewable Energy Use (%)", "Annual CO2 Emissions (Mt)", 
+                  "Continent", "Income Classification"
+                  ]
 
     # Reorder columns
-    df = df[["Continent", "Country", "Income Classification", "Year", "Renewable Energy Use (%)", "Annual CO2 Emissions (Mt)"]]
+    df = df[["Continent", "Country", "Income Classification", "Year", 
+             "Access to Electricity (% of population)",
+             "Renewable Electricity Output (% of total electricity output)",
+             "Renewable Energy Use (%)", 
+             "Annual CO2 Emissions (Mt)"]]
 
-    # Drop rows with any missing values
-    df.dropna(axis=0, how="any", inplace=True)
+    # Fill missing values with 0
+    df.fillna(0, inplace=True)
 
-    # Convert "Year" to str
-    df["Year"] = df["Year"].astype("str")
+    # Fill missing Continent for Timor-Leste with "Asia"
+    df.loc[df["Country"] == "Timor-Leste", "Continent"] = "Asia"
+
+    # Convert "Year" to int
+    df["Year"] = df["Year"].astype("int")
 
     return df
 
-def plot_data(df, x, y, hue, title):
-    # Plot line graph
+def plot_data(df, x, y, hue, title, xlim=None, ylim=None):
+    # Filter the dataframe if xlim is specified
+    if xlim:
+        df = df[df[x] <= xlim]
+
+    # Plot line graph for historical data
     g = sns.relplot(kind="line", data=df, x=x, y=y, hue=hue, aspect=1.75).set(title=title)
+
+    # Set x-axis limit if specified
+    if xlim:
+        g.set(xlim=(df[x].min(), xlim))
+
+     # Set y-axis limit if specified
+    if ylim:
+        g.set(ylim=(df[y].min(), ylim))
+
     g.set_xticklabels(rotation=30)
     plt.show()
 
@@ -37,16 +63,21 @@ def main():
     file_path = "/workspaces/World-Sustainability-Dataset/WorldSustainabilityDataset.csv"
     df = read_data(file_path)
     df = clean_data(df)
+    print(df)
 
     # Group and aggregate data
-    avg_df = df.groupby(["Continent", "Year"]).agg({
-        "Renewable Energy Use (%)": "mean",
-        "Annual CO2 Emissions (Mt)": "mean"
-    }).reset_index()
+    avg_df = df.groupby(["Continent", "Year"]).mean().reset_index()
+    print(avg_df)
 
-    # Plot graphs
-    plot_data(avg_df, "Year", "Renewable Energy Use (%)", "Continent", "Average World Renewable Energy Use from 2000-2018 by Continent")
-    plot_data(avg_df, "Year", "Annual CO2 Emissions (Mt)", "Continent", "Average Annual World CO2 Emissions from 2000-2018 by Continent")
+    # Plot graphs for historical data
+    plot_data(avg_df, "Year", "Access to Electricity (% of population)", "Continent", 
+              "Average Access to Electricity from 2000-2018 by Continent", xlim=2018)
+    plot_data(avg_df, "Year", "Renewable Electricity Output (% of total electricity output)", "Continent", 
+              "Average Renewable Electricity Output from 2000-2018 by Continent", xlim=2015, ylim=100)
+    plot_data(avg_df, "Year", "Renewable Energy Use (%)", "Continent", 
+              "Average Renewable Energy Use from 2000-2018 by Continent", xlim=2018, ylim=100)
+    plot_data(avg_df, "Year", "Annual CO2 Emissions (Mt)", "Continent", 
+              "Average Annual CO2 Emissions from 2000-2018 by Continent", xlim=2018, ylim=500)
 
 if __name__ == "__main__":
     main()
