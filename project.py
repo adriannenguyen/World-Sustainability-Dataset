@@ -32,8 +32,9 @@ def clean_data(df):
     # Fill missing values with 0
     df.fillna(0, inplace=True)
 
-    # Fill missing Continent for Timor-Leste with "Asia"
+    # Fill missing Continent for Timor-Leste
     df.loc[df["Country"] == "Timor-Leste", "Continent"] = "Asia"
+    df.loc[df["Country"] == "Timor-Leste", "Income Classification"] = "Lower-middle income"
 
     # Convert "Year" to int
     df["Year"] = df["Year"].astype("int")
@@ -52,7 +53,7 @@ def plot_data(df, x, y, hue, title, xlim=None, ylim=None):
     if xlim:
         g.set(xlim=(df[x].min(), xlim))
 
-     # Set y-axis limit if specified
+    # Set y-axis limit if specified
     if ylim:
         g.set(ylim=(df[y].min(), ylim))
 
@@ -60,24 +61,38 @@ def plot_data(df, x, y, hue, title, xlim=None, ylim=None):
     plt.show()
 
 def main():
-    file_path = "/workspaces/World-Sustainability-Dataset/WorldSustainabilityDataset.csv"
     df = read_data(file_path)
     df = clean_data(df)
     print(df)
 
-    # Group and aggregate data
-    avg_df = df.groupby(["Continent", "Year"]).mean().reset_index()
-    print(avg_df)
+    # Group and aggregate data by Continent
+    cont_avg_df = df.groupby(["Continent", "Year"]).mean().reset_index()
+    print(cont_avg_df)
 
-    # Plot graphs for historical data
-    plot_data(avg_df, "Year", "Access to Electricity (% of population)", "Continent", 
+    # Plot line graphs by Continent
+    plot_data(cont_avg_df, "Year", "Access to Electricity (% of population)", "Continent", 
               "Average Access to Electricity from 2000-2018 by Continent", xlim=2018)
-    plot_data(avg_df, "Year", "Renewable Electricity Output (% of total electricity output)", "Continent", 
+    plot_data(cont_avg_df, "Year", "Renewable Electricity Output (% of total electricity output)", "Continent", 
               "Average Renewable Electricity Output from 2000-2018 by Continent", xlim=2015, ylim=100)
-    plot_data(avg_df, "Year", "Renewable Energy Use (%)", "Continent", 
+    plot_data(cont_avg_df, "Year", "Renewable Energy Use (%)", "Continent", 
               "Average Renewable Energy Use from 2000-2018 by Continent", xlim=2018, ylim=100)
-    plot_data(avg_df, "Year", "Annual CO2 Emissions (Mt)", "Continent", 
+    plot_data(cont_avg_df, "Year", "Annual CO2 Emissions (Mt)", "Continent", 
               "Average Annual CO2 Emissions from 2000-2018 by Continent", xlim=2018, ylim=500)
 
+    # Group and aggregate data by Income Classification
+    inc_avg_df = df.groupby(["Income Classification", "Year"]).mean().reset_index()
+    print(inc_avg_df)
+
+    # Plot bar graphs by Income Classification
+    plot_data(inc_avg_df, "Year", "Access to Electricity (% of population)", "Income Classification", 
+              "Average Access to Electricity from 2000-2018 by Income Classification", xlim=2018)
+    plot_data(inc_avg_df, "Year", "Renewable Electricity Output (% of total electricity output)", "Income Classification", 
+              "Average Renewable Electricity Output from 2000-2018 by Income Classification", xlim=2015, ylim=100)
+    plot_data(inc_avg_df, "Year", "Renewable Energy Use (%)", "Income Classification", 
+              "Average Renewable Energy Use from 2000-2018 by Income Classification", xlim=2018, ylim=100)
+    plot_data(inc_avg_df, "Year", "Annual CO2 Emissions (Mt)", "Income Classification", 
+              "Average Annual CO2 Emissions from 2000-2018 by Income Classification", xlim=2018, ylim=500)
+
 if __name__ == "__main__":
+    file_path = "/workspaces/World-Sustainability-Dataset/WorldSustainabilityDataset.csv"
     main()
