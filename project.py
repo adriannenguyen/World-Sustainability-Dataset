@@ -8,6 +8,7 @@ from sklearn.model_selection import GridSearchCV
 from sklearn.preprocessing import RobustScaler
 from sklearn.model_selection import cross_val_score
 from sklearn.model_selection import train_test_split
+from IPython.display import display
 
 
 def read_data(file_path):
@@ -70,6 +71,8 @@ def clean_data(df):
 
     return df
 
+def save_to_csv(df, file_name):
+    df.to_csv(f"output/{file_name}.csv")
 
 def plot_data(df, x, y, hue, title, xlim=None, ylim=None):
     # Filter the dataframe if xlim is specified
@@ -147,13 +150,29 @@ def predict_future(model, future_data):
 
 
 def main():
+    # Read and clean data into a dataframe
     df = read_data(file_path)
     df = clean_data(df)
     print(df)
 
+    # Summary and dimensions of dataframe
+    print(df.describe())
+    print(df.shape)
+
+    # Create a table for statistics
+    df_filtered = df.drop(columns=["Year"])
+    df_filtered = df_filtered[df_filtered != 0].dropna()
+    summary_stats = df_filtered.describe()
+    styled_table = summary_stats.style.set_precision(2)
+    display(styled_table)
+
     # Group and aggregate data by Continent
     cont_avg_df = df.groupby(["Continent", "Year"]).mean().reset_index()
     print(cont_avg_df)
+
+    # Summary and dimensions of dataframe
+    print(cont_avg_df.describe())
+    print(cont_avg_df.shape)
 
     # Plot line graphs by Continent
     plot_data(
@@ -195,6 +214,10 @@ def main():
     # Group and aggregate data by Income Classification
     inc_avg_df = df.groupby(["Income Classification", "Year"]).mean().reset_index()
     print(inc_avg_df)
+
+    # Summary and dimensions of dataframe
+    print(inc_avg_df.describe())
+    print(inc_avg_df.shape)
 
     # Plot line graphs by Income Classification
     plot_data(
@@ -260,6 +283,11 @@ def main():
         "Annual CO2 Emissions from 2000-2050 by Continent",
     )
 
+    # Save as CSV
+    save_to_csv(df, "df")
+    save_to_csv(df.describe(), "df_stats")
+    save_to_csv(cont_avg_df, "cont_avg")
+    save_to_csv(inc_avg_df, "inc_avg")
 
 if __name__ == "__main__":
     file_path = (
