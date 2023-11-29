@@ -18,32 +18,34 @@ def read_data(file_path):
 
 def clean_data(df):
     # Select relevant columns
-    df = df[
-        [
-            "Country Name",
-            "Year",
-            "Access to electricity (% of population) - EG.ELC.ACCS.ZS",
-            "Renewable electricity output (% of total electricity output) - EG.ELC.RNEW.ZS",
-            "Renewable energy consumption (% of total final energy consumption) - EG.FEC.RNEW.ZS",
-            "Annual production-based emissions of carbon dioxide (CO2), measured in million tonnes",
-            "Continent",
-            "Income Classification (World Bank Definition)",
-        ]
-    ]
-
-    # Rename columns
-    df.columns = [
-        "Country",
+    relevant_columns = [
+        "Country Name",
         "Year",
-        "Access to Electricity (% of population)",
-        "Renewable Electricity Output (% of total electricity output)",
-        "Renewable Energy Use (%)",
-        "Annual CO2 Emissions (Mt)",
+        "Access to electricity (% of population) - EG.ELC.ACCS.ZS",
+        "Renewable electricity output (% of total electricity output) - EG.ELC.RNEW.ZS",
+        "Renewable energy consumption (% of total final energy consumption) - EG.FEC.RNEW.ZS",
+        "Annual production-based emissions of carbon dioxide (CO2), measured in million tonnes",
         "Continent",
-        "Income Classification",
+        "Income Classification (World Bank Definition)",
     ]
 
-    # Reorder columns
+    # Create dataframe and rename columns
+    df = df[relevant_columns].rename(
+        columns={
+            "Country Name": "Country",
+            "Income Classification (World Bank Definition)": "Income Classification",
+            "Access to electricity (% of population) - EG.ELC.ACCS.ZS": 
+            "Access to Electricity (% of population)",
+            "Renewable electricity output (% of total electricity output) - EG.ELC.RNEW.ZS": 
+            "Renewable Electricity Output (% of total electricity output)",
+            "Renewable energy consumption (% of total final energy consumption) - EG.FEC.RNEW.ZS": 
+            "Renewable Energy Use (%)",
+            "Annual production-based emissions of carbon dioxide (CO2), measured in million tonnes": 
+            "Annual CO2 Emissions (Mt)",
+        }
+    )
+
+    # Fill in missing values with 0
     df = df[
         [
             "Continent",
@@ -55,24 +57,27 @@ def clean_data(df):
             "Renewable Energy Use (%)",
             "Annual CO2 Emissions (Mt)",
         ]
+    ].fillna(0)
+
+    # Fill in missing values for Timor-Leste
+    df.loc[df["Country"] == "Timor-Leste", ["Continent", "Income Classification"]] = [
+        "Asia",
+        "Lower-middle income",
     ]
 
-    # Fill missing values with 0
-    df.fillna(0, inplace=True)
-
-    # Fill missing Continent for Timor-Leste
-    df.loc[df["Country"] == "Timor-Leste", "Continent"] = "Asia"
-    df.loc[
-        df["Country"] == "Timor-Leste", "Income Classification"
-    ] = "Lower-middle income"
-
-    # Convert "Year" to int
-    df["Year"] = df["Year"].astype("int")
+    # Convert Year to int
+    df["Year"] = df["Year"].astype(int)
 
     return df
 
+
 def save_to_csv(df, file_name):
-    df.to_csv(f"output/{file_name}.csv")
+    output_folder = "output"
+    if not os.path.exists(output_folder):
+        os.makedirs(output_folder)
+
+    df.to_csv(f"{output_folder}/{file_name}.csv")
+
 
 def plot_data(df, x, y, hue, title, xlim=None, ylim=None):
     # Filter the dataframe if xlim is specified
@@ -100,7 +105,7 @@ def train_model(X, y):
     # One-hot encode categorical features
     X_encoded = pd.get_dummies(X, columns=["Continent"])
 
-    # Scale features using RobustScaler (robust to outliers)
+    # Scale features using RobustScaler
     scaler = RobustScaler()
     X_scaled = scaler.fit_transform(X_encoded)
 
@@ -151,13 +156,12 @@ def predict_future(model, future_data):
 
 def main():
     # Read and clean data into a dataframe
-    df = read_data(file_path)
-    df = clean_data(df)
+    df = clean_data(read_data(file_path))
     print(df)
-
-    # Summary and dimensions of dataframe
-    print(df.describe())
     print(df.shape)
+    print(df.describe())
+    save_to_csv(df, "df")
+    save_to_csv(df.describe(), "df_stats")
 
     # Create a table for statistics
     df_filtered = df.drop(columns=["Year"])
@@ -168,13 +172,13 @@ def main():
 
     # Group and aggregate data by Continent
     cont_avg_df = df.groupby(["Continent", "Year"]).mean().reset_index()
-    print(cont_avg_df)
+    save_to_csv(cont_avg_df, "cont_avg")
 
-    # Summary and dimensions of dataframe
-    print(cont_avg_df.describe())
-    print(cont_avg_df.shape)
+    # Group and aggregate data by Income Classification
+    inc_avg_df = df.groupby(["Income Classification", "Year"]).mean().reset_index()
+    save_to_csv(inc_avg_df, "inc_avg")
 
-    # Plot line graphs by Continent
+    # Plot line graphs
     plot_data(
         cont_avg_df,
         "Year",
@@ -211,15 +215,6 @@ def main():
         ylim=500,
     )
 
-    # Group and aggregate data by Income Classification
-    inc_avg_df = df.groupby(["Income Classification", "Year"]).mean().reset_index()
-    print(inc_avg_df)
-
-    # Summary and dimensions of dataframe
-    print(inc_avg_df.describe())
-    print(inc_avg_df.shape)
-
-    # Plot line graphs by Income Classification
     plot_data(
         inc_avg_df,
         "Year",
@@ -256,12 +251,14 @@ def main():
         ylim=500,
     )
 
-    # Split the data into features (X) and target variable (y)
+    # Split the CO2 emissions data into features (X) and target variable (y)
     X = df[["Continent", "Year"]]
     y = df["Annual CO2 Emissions (Mt)"]
 
     # Split the data into training and testing sets
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, random_state=42
+    )
 
     # Train model
     co2_emissions_model = train_model(X_train, y_train)
@@ -274,7 +271,7 @@ def main():
     )
     co2_emissions_predictions = predict_future(co2_emissions_model, future_data_co2)
 
-    # Plot graphs for historical and predicted data
+    # Plot graph for historical and predicted data
     plot_data(
         pd.concat([cont_avg_df, co2_emissions_predictions]),
         "Year",
@@ -283,11 +280,6 @@ def main():
         "Annual CO2 Emissions from 2000-2050 by Continent",
     )
 
-    # Save as CSV
-    save_to_csv(df, "df")
-    save_to_csv(df.describe(), "df_stats")
-    save_to_csv(cont_avg_df, "cont_avg")
-    save_to_csv(inc_avg_df, "inc_avg")
 
 if __name__ == "__main__":
     file_path = (
